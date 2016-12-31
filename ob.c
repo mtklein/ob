@@ -4,6 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 
+// srcs:  git grep -lI "" "**.c"
+// mains: git grep -lwI "int main" "**.c"
+
 enum BuildType { kDefault, kDebug, kRelease, kASAN, kTSAN };
 
 static void write_ninja(FILE* ninja, enum BuildType bt,
