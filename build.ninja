@@ -1,7 +1,11 @@
-builddir = obj
+rule ob
+    command = $in > $out
+build build.ninja: ob bin/ob
+    generator = 1
 
-cxx    = clang++ -Weverything -Wno-c++98-compat -Wno-padded
-cflags = -g -Os -std=c++14 -Werror
+builddir = obj
+cxx      = clang++ -fcolor-diagnostics
+cflags   = -std=c++14 -g -Werror -Weverything -Wno-c++98-compat -Wno-padded -Os
 
 rule compile
     command     = $cxx $cflags -MD -MF $out.d -c $in -o $out
@@ -14,4 +18,5 @@ rule link
     description = link $out
 
 build obj/ob.o: compile ob.cc
+
 build bin/ob: link obj/ob.o

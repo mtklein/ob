@@ -41,6 +41,12 @@ int main(int argc, char** argv) {
     const char*   mains[] = { "ob" };
 
 
+    printf("rule ob\n");
+    printf("    command = $in > $out\n");
+    printf("build build.ninja: ob bin/ob\n");
+    printf("    generator = 1\n");
+    printf("\n");
+
     printf("builddir = obj\n");
     printf("cxx      = clang++ -fcolor-diagnostics\n");
     printf("cflags   = -std=c++14");
@@ -53,15 +59,15 @@ int main(int argc, char** argv) {
     printf("\n");
     printf("\n");
 
-    printf("rule compile                                                \n"
+    printf("rule compile\n"
            "    command     = $cxx $cflags -MD -MF $out.d -c $in -o $out\n"
-           "    depfile     = $out.d                                    \n"
-           "    deps        = gcc                                       \n"
-           "    description = compile $out                              \n"
-           "                                                            \n"
-           "rule link                                                   \n"
-           "    command     = $cxx $in -o $out                          \n"
-           "    description = link $out                                 \n");
+           "    depfile     = $out.d\n"
+           "    deps        = gcc\n"
+           "    description = compile $out\n"
+           "\n"
+           "rule link\n"
+           "    command     = $cxx $in -o $out\n"
+           "    description = link $out\n");
     printf("\n");
 
     for (auto&& target : targets) {
