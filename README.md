@@ -9,12 +9,12 @@ To bootstrap:
 
 To use in dev mode:
 
-    $ bin/ob
+    $ bin/ob > build.ninja
 
 To use in debug mode:
 
-    $ bin/ob [-d|--debug]
+    $ bin/ob [-d|--debug] > build.ninja
 
 To use in release mode:
 
-    $ bin/ob [-r|--release]
+    $ bin/ob [-r|--release] > build.ninja
