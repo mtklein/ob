@@ -8,8 +8,10 @@ enum BuildType { kDefault, kDebug, kRelease };
 
 int main(int argc, char** argv, char** envp) {
     enum BuildType bt = kDefault;
-    char* ninja_argv[1024] = { "ninja", NULL /*...*/ };
-    char** np = ninja_argv+1;
+
+    char** ninja_argv = calloc((size_t)argc+1, sizeof(char*));
+    char** np = ninja_argv;
+    *np++ = "ninja";
 
     for (int i = 1; i < argc; i++) {
         if (0 == strcmp(argv[i], "--debug"))   { bt = kDebug;   continue; }
@@ -75,6 +77,7 @@ int main(int argc, char** argv, char** envp) {
     pid_t pid;
     posix_spawnp(&pid, "ninja", NULL, NULL, ninja_argv, envp);
     waitpid(pid, NULL, 0);
+    free(ninja_argv);
 
     remove("build.ninja");
     return 0;
