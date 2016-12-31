@@ -11,13 +11,9 @@ To build in default mode:
 
     bin/ob
 
-To build in debug mode:
+To build in debug, release, ASAN, or TSAN mode:
 
-    bin/ob --debug
-
-To build in release mode:
-
-    bin/ob --release
+    bin/ob [--debug|--release|--asan|--tsan]
 
 To print this help:
 

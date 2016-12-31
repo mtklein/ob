@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
-enum BuildType { kDefault, kDebug, kRelease };
+enum BuildType { kDefault, kDebug, kRelease, kASAN, kTSAN };
 
 int main(int argc, char** argv, char** envp) {
     enum BuildType bt = kDefault;
@@ -16,6 +16,8 @@ int main(int argc, char** argv, char** envp) {
     for (int i = 1; i < argc; i++) {
         if (0 == strcmp(argv[i], "--debug"))   { bt = kDebug;   continue; }
         if (0 == strcmp(argv[i], "--release")) { bt = kRelease; continue; }
+        if (0 == strcmp(argv[i], "--asan"))    { bt = kASAN;    continue; }
+        if (0 == strcmp(argv[i], "--tsan"))    { bt = kTSAN;    continue; }
         if (0 == strcmp(argv[i], "--help")) {
             printf("`ob`, opinionated build\n"
                    "=======================\n\n"
@@ -24,10 +26,8 @@ int main(int argc, char** argv, char** envp) {
                    "    mkdir -p bin; cc ob.c -o bin/ob\n\n"
                    "To build in default mode:\n\n"
                    "    bin/ob\n\n"
-                   "To build in debug mode:\n\n"
-                   "    bin/ob --debug\n\n"
-                   "To build in release mode:\n\n"
-                   "    bin/ob --release\n\n"
+                   "To build in debug, release, ASAN, or TSAN mode:\n\n"
+                   "    bin/ob [--debug|--release|--asan|--tsan]\n\n"
                    "To print this help:\n\n"
                    "    bin/ob --help\n\n"
                    "Any other flags are passed to Ninja.\n");
@@ -37,28 +37,26 @@ int main(int argc, char** argv, char** envp) {
     }
 
     FILE* ninja = fopen("build.ninja", "w");
-    fprintf(ninja, "builddir = obj\n");
-    fprintf(ninja, "cc       = clang\n");
-    fprintf(ninja, "cflags   = -fcolor-diagnostics");
-    if (bt != kRelease) {
-        fprintf(ninja, " -g -Werror -Weverything -Wno-padded");
-    }
-    if (bt != kDebug) {
-        fprintf(ninja, " -Os");
-    }
-    if (bt == kRelease) {
-        fprintf(ninja, " -DNDEBUG");
-    }
-    fprintf(ninja, "\n");
-
-    fprintf(ninja, "rule cc\n"
+    fprintf(ninja, "builddir = obj\n"
+                   "rule cc\n"
                    "    command     = $cc $cflags -MD -MF $out.d -c $in -o $out\n"
                    "    depfile     = $out.d\n"
                    "    deps        = gcc\n"
                    "    description = compile $out\n"
                    "rule link\n"
                    "    command     = $cc $in -o $out\n"
-                   "    description = link $out\n\n");
+                   "    description = link $out\n");
+
+    fprintf(ninja, "cc = clang");
+    if (bt == kASAN) { fprintf(ninja, " -fsanitize=address,undefined"); }
+    if (bt == kTSAN) { fprintf(ninja, " -fsanitize=thread"); }
+    fprintf(ninja, "\n");
+
+    fprintf(ninja, "cflags = -fcolor-diagnostics");
+    if (bt != kDebug)   { fprintf(ninja, " -Os"); }
+    if (bt != kRelease) { fprintf(ninja, " -g -Werror -Weverything -Wno-padded"); }
+    if (bt == kRelease) { fprintf(ninja, " -DNDEBUG"); }
+    fprintf(ninja, "\n");
 
     const char* srcs[] = { "hello", "ob" };
     int nsrcs = sizeof(srcs) / sizeof(*srcs);
