@@ -3,32 +3,20 @@ rule ob
 build build.ninja: ob bin/ob
     generator = 1
 
-builddir  = obj
-cc        = clang
-cxx       = clang++
-cflags    = -fcolor-diagnostics -g -Werror -Weverything -Wno-padded -Os
-cflags_c  = -std=c11
-cflags_cc = -std=c++14 -Wno-c++98-compat
-
+builddir = obj
+cc       = clang
+cflags   = -fcolor-diagnostics -g -Werror -Weverything -Wno-padded -Os
 rule cc
-    command     = $cc $cflags $cflags_c -MD -MF $out.d -c $in -o $out
-    depfile     = $out.d
-    deps        = gcc
-    description = compile $out
-
-rule cxx
-    command     = $cxx $cflags $cflags_cc -MD -MF $out.d -c $in -o $out
+    command     = $cc $cflags -MD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
 
 rule link
-    command     = $cxx $in -o $out
+    command     = $cc $in -o $out
     description = link $out
 
 build obj/hello.o: cc hello.c
-
-build obj/ob.o: cxx ob.cc
-
+build obj/ob.o: cc ob.c
 build bin/hello: link obj/hello.o
 build bin/ob: link obj/ob.o
