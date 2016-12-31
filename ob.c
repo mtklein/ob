@@ -12,8 +12,8 @@ int main(int argc, char** argv, char** envp) {
     char** np = ninja_argv+1;
 
     for (int i = 1; i < argc; i++) {
-        if (0 == strcmp(argv[i], "--debug"))   { bt = kDebug; continue; }
-        if (0 == strcmp(argv[i], "--release")) { bt = kDebug; continue; }
+        if (0 == strcmp(argv[i], "--debug"))   { bt = kDebug;   continue; }
+        if (0 == strcmp(argv[i], "--release")) { bt = kRelease; continue; }
         if (0 == strcmp(argv[i], "--help")) {
             printf("`ob`, opinionated build\n"
                    "=======================\n\n"
