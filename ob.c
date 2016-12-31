@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 enum BuildType { kDev, kDebug, kRelease };
@@ -11,18 +12,6 @@ int main(int argc, char** argv) {
     }
 
     FILE* ninja = fopen("build.ninja", "w");
-    fprintf(ninja, "rule ob\n");
-    fprintf(ninja, "    command = $in");
-    switch (bt) {
-        case kDev:                            break;
-        case kDebug:   fprintf(ninja, " -d"); break;
-        case kRelease: fprintf(ninja, " -r"); break;
-    }
-    fprintf(ninja, "\n");
-
-    fprintf(ninja, "build build.ninja: ob bin/ob\n");
-    fprintf(ninja, "    generator = 1\n\n");
-
     fprintf(ninja, "builddir = obj\n");
     fprintf(ninja, "cc       = clang\n");
     fprintf(ninja, "cflags   = -fcolor-diagnostics");
@@ -59,5 +48,8 @@ int main(int argc, char** argv) {
     }
 
     fclose(ninja);
+
+    system("ninja");
+    remove("build.ninja");
     return 0;
 }

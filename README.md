@@ -9,12 +9,12 @@ To bootstrap:
 
 To use in dev mode:
 
-    $ bin/ob; ninja
+    $ bin/ob
 
 To use in debug mode:
 
-    $ bin/ob -d; ninja
+    $ bin/ob -d
 
 To use in release mode:
 
-    $ bin/ob -r; ninja
+    $ bin/ob -r
