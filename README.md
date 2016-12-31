@@ -5,7 +5,7 @@
 
 To bootstrap:
 
-    $ clang ob.c -o bin/ob
+    $ ninja
 
 To use in dev mode:
 
