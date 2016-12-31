@@ -13,8 +13,8 @@ To use in dev mode:
 
 To use in debug mode:
 
-    $ bin/ob [-d|--debug] > build.ninja
+    $ bin/ob -d > build.ninja
 
 To use in release mode:
 
-    $ bin/ob [-r|--release] > build.ninja
+    $ bin/ob -r > build.ninja
