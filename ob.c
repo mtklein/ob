@@ -1,14 +1,20 @@
+#include <spawn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 enum BuildType { kDev, kDebug, kRelease };
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv, char** envp) {
     enum BuildType bt = kDev;
+    char* ninja_argv[1024] = { "ninja", NULL /*...*/ };
+    char** np = ninja_argv+1;
+
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-' && argv[i][1] == 'd') { bt = kDebug;   }
-        if (argv[i][0] == '-' && argv[i][1] == 'r') { bt = kRelease; }
+        if (argv[i][0] == '-' && argv[i][1] == 'D') { bt = kDebug;   continue; }
+        if (argv[i][0] == '-' && argv[i][1] == 'R') { bt = kRelease; continue; }
+
+        *np++ = argv[i];
     }
 
     FILE* ninja = fopen("build.ninja", "w");
@@ -49,7 +55,10 @@ int main(int argc, char** argv) {
 
     fclose(ninja);
 
-    system("ninja");
+    pid_t pid;
+    posix_spawnp(&pid, "ninja", NULL, NULL, ninja_argv, envp);
+    waitpid(pid, NULL, 0);
+
     remove("build.ninja");
     return 0;
 }

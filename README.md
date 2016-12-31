@@ -13,8 +13,10 @@ To use in dev mode:
 
 To use in debug mode:
 
-    $ bin/ob -d
+    $ bin/ob -D
 
 To use in release mode:
 
-    $ bin/ob -r
+    $ bin/ob -R
+
+Arguments that are not -D or -R are passed to Ninja.
