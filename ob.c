@@ -6,8 +6,7 @@
 
 enum BuildType { kDefault, kDebug, kRelease, kASAN, kTSAN };
 
-static void write_ninja(const char* path, enum BuildType bt) {
-    FILE* ninja = fopen(path, "w");
+static void write_ninja(FILE* ninja, enum BuildType bt) {
     fprintf(ninja, "builddir = obj\n"
                    "rule cc\n"
                    "    command     = $cc $cflags -MD -MF $out.d -c $in -o $out\n"
@@ -41,7 +40,6 @@ static void write_ninja(const char* path, enum BuildType bt) {
     for (int i = 0; i < nmains; i++) {
         fprintf(ninja, "build bin/%s: link obj/%s.o\n", mains[i], mains[i]);
     }
-    fclose(ninja);
 }
 
 int main(int argc, char** argv, char** envp) {
@@ -74,13 +72,17 @@ int main(int argc, char** argv, char** envp) {
         *np++ = argv[i];
     }
 
-    write_ninja("build.ninja", bt);
+    FILE* ninja = fopen("build.ninja", "w");
+    write_ninja(ninja, bt);
+    fclose(ninja);
+
+    int status;
     {
         pid_t pid;
         posix_spawnp(&pid, "ninja", NULL, NULL, ninja_argv, envp);
-        waitpid(pid, NULL, 0);
+        waitpid(pid, &status, 0);
     }
     remove("build.ninja");
     free(ninja_argv);
-    return 0;
+    return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
 }
