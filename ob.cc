@@ -1,39 +1,17 @@
 #include <stdio.h>
 #include <string.h>
 
-struct Options {
-    enum { Dev, Debug, Release } build_type;
-};
-static void set_debug  (Options* o) { o->build_type = Options::Debug;   }
-static void set_release(Options* o) { o->build_type = Options::Release; }
-
-
-static constexpr struct Flag {
-    char        brief;
-    const char* full;
-    void (*callback)(Options*);
-} kFlags[] = {
-    { 'd', "debug",   set_debug   },
-    { 'r', "release", set_release },
-};
+enum class BuildType { Dev, Debug, Release };
 
 int main(int argc, char** argv) {
-    Options options {
-        Options::Dev,
-    };
+    auto build_type = BuildType::Dev;
 
     for (int i = 1; i < argc; i++) {
-        for (auto&& flag : kFlags) {
-            auto len = strlen(argv[i]);
-            if (len == 2 && argv[i][0] == '-'
-                         && argv[i][1] == flag.brief) {
-                flag.callback(&options);
-            }
-            if (len >  2 && argv[i][0] == '-'
-                         && argv[i][1] == '-'
-                         && 0 == strcmp(argv[i]+2, flag.full)) {
-                flag.callback(&options);
-            }
+        if (0 == strcmp(argv[i], "-d") || 0 == strcmp(argv[i], "--debug")) {
+            build_type = BuildType::Debug;
+        }
+        if (0 == strcmp(argv[i], "-r") || 0 == strcmp(argv[i], "--release")) {
+            build_type = BuildType::Release;
         }
     }
 
@@ -43,10 +21,10 @@ int main(int argc, char** argv) {
 
     printf("rule ob\n");
     printf("    command = $in");
-    switch (options.build_type) {
-        case Options::Dev:                    break;
-        case Options::Debug:   printf(" -d"); break;
-        case Options::Release: printf(" -r"); break;
+    switch (build_type) {
+        case BuildType::Dev:                    break;
+        case BuildType::Debug:   printf(" -d"); break;
+        case BuildType::Release: printf(" -r"); break;
     }
     printf(" > $out\n");
 
@@ -56,10 +34,10 @@ int main(int argc, char** argv) {
     printf("builddir = obj\n");
     printf("cxx      = clang++ -fcolor-diagnostics\n");
     printf("cflags   = -std=c++14");
-    if (options.build_type != Options::Release) {
+    if (build_type != BuildType::Release) {
         printf(" -g -Werror -Weverything -Wno-c++98-compat -Wno-padded");
     }
-    if (options.build_type != Options::Debug) {
+    if (build_type != BuildType::Debug) {
         printf(" -Os");
     }
     printf("\n\n");
