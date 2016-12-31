@@ -1,7 +1,7 @@
-ob, opinionated build
+`ob`, opinionated build
 =====================
 
-ob builds C and C++ programs if they are structured in its opinionated way.
+`ob` builds C and C++ programs if they are structured in its opinionated way.
 
 To bootstrap:
 
