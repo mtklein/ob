@@ -1,19 +1,36 @@
 #include <spawn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
-enum BuildType { kDev, kDebug, kRelease };
+enum BuildType { kDefault, kDebug, kRelease };
 
 int main(int argc, char** argv, char** envp) {
-    enum BuildType bt = kDev;
+    enum BuildType bt = kDefault;
     char* ninja_argv[1024] = { "ninja", NULL /*...*/ };
     char** np = ninja_argv+1;
 
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-' && argv[i][1] == 'D') { bt = kDebug;   continue; }
-        if (argv[i][0] == '-' && argv[i][1] == 'R') { bt = kRelease; continue; }
-
+        if (0 == strcmp(argv[i], "--debug"))   { bt = kDebug; continue; }
+        if (0 == strcmp(argv[i], "--release")) { bt = kDebug; continue; }
+        if (0 == strcmp(argv[i], "--help")) {
+            printf("`ob`, opinionated build\n"
+                   "=======================\n\n"
+                   "`ob` builds C programs if they are structured in its opinionated way.\n\n"
+                   "To bootstrap:\n\n"
+                   "    $ mkdir -p bin; clang ob.c -o bin/ob\n\n"
+                   "To build in default mode:\n\n"
+                   "    $ bin/ob\n\n"
+                   "To build in debug mode:\n\n"
+                   "    $ bin/ob --debug\n\n"
+                   "To build in release mode:\n\n"
+                   "    $ bin/ob --release\n\n"
+                   "To print this help:\n\n"
+                   "    $ bin/ob --help\n\n"
+                   "Any other flags are passed to Ninja.\n");
+            return 1;
+        }
         *np++ = argv[i];
     }
 

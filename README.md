@@ -1,5 +1,5 @@
 `ob`, opinionated build
-=====================
+=======================
 
 `ob` builds C programs if they are structured in its opinionated way.
 
@@ -7,16 +7,20 @@ To bootstrap:
 
     $ mkdir -p bin; clang ob.c -o bin/ob
 
-To use in dev mode:
+To build in default mode:
 
     $ bin/ob
 
-To use in debug mode:
+To build in debug mode:
 
-    $ bin/ob -D
+    $ bin/ob --debug
 
-To use in release mode:
+To build in release mode:
 
-    $ bin/ob -R
+    $ bin/ob --release
 
-Arguments that are not -D or -R are passed to Ninja.
+To print this help:
+
+    $ bin/ob --help
+
+Any other flags are passed to Ninja.
