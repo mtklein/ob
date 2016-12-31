@@ -16,18 +16,18 @@ int main(int argc, char** argv, char** envp) {
         if (0 == strcmp(argv[i], "--release")) { bt = kDebug; continue; }
         if (0 == strcmp(argv[i], "--help")) {
             printf("`ob`, opinionated build\n"
-                   "=======================\n"
+                   "=======================\n\n"
                    "`ob` builds C programs if they are structured in its opinionated way.\n\n"
-                   "To bootstrap:\n"
-                   "    $ mkdir -p bin; clang ob.c -o bin/ob\n"
-                   "To build in default mode:\n"
-                   "    $ bin/ob\n"
-                   "To build in debug mode:\n"
-                   "    $ bin/ob --debug\n"
-                   "To build in release mode:\n"
-                   "    $ bin/ob --release\n"
-                   "To print this help:\n"
-                   "    $ bin/ob --help\n"
+                   "To bootstrap:\n\n"
+                   "    $ mkdir -p bin; clang ob.c -o bin/ob\n\n"
+                   "To build in default mode:\n\n"
+                   "    $ bin/ob\n\n"
+                   "To build in debug mode:\n\n"
+                   "    $ bin/ob --debug\n\n"
+                   "To build in release mode:\n\n"
+                   "    $ bin/ob --release\n\n"
+                   "To print this help:\n\n"
+                   "    $ bin/ob --help\n\n"
                    "Any other flags are passed to Ninja.\n");
             return 1;
         }
