@@ -81,5 +81,6 @@ int main(int argc, char** argv, char** envp) {
         waitpid(pid, NULL, 0);
     }
     remove("build.ninja");
+    free(ninja_argv);
     return 0;
 }
