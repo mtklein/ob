@@ -6,37 +6,8 @@
 
 enum BuildType { kDefault, kDebug, kRelease, kASAN, kTSAN };
 
-int main(int argc, char** argv, char** envp) {
-    enum BuildType bt = kDefault;
-
-    char** ninja_argv = calloc((size_t)argc+1, sizeof(char*));
-    char** np = ninja_argv;
-    *np++ = "ninja";
-
-    for (int i = 1; i < argc; i++) {
-        if (0 == strcmp(argv[i], "--debug"))   { bt = kDebug;   continue; }
-        if (0 == strcmp(argv[i], "--release")) { bt = kRelease; continue; }
-        if (0 == strcmp(argv[i], "--asan"))    { bt = kASAN;    continue; }
-        if (0 == strcmp(argv[i], "--tsan"))    { bt = kTSAN;    continue; }
-        if (0 == strcmp(argv[i], "--help")) {
-            printf("`ob`, opinionated build\n"
-                   "=======================\n\n"
-                   "`ob` builds C programs if they are structured in its opinionated way.\n\n"
-                   "To bootstrap:\n\n"
-                   "    mkdir -p bin; cc ob.c -o bin/ob\n\n"
-                   "To build in default mode:\n\n"
-                   "    bin/ob\n\n"
-                   "To build in debug, release, ASAN, or TSAN mode:\n\n"
-                   "    bin/ob [--debug|--release|--asan|--tsan]\n\n"
-                   "To print this help:\n\n"
-                   "    bin/ob --help\n\n"
-                   "Any other flags are passed to Ninja.\n");
-            return 1;
-        }
-        *np++ = argv[i];
-    }
-
-    FILE* ninja = fopen("build.ninja", "w");
+static void write_ninja(const char* path, enum BuildType bt) {
+    FILE* ninja = fopen(path, "w");
     fprintf(ninja, "builddir = obj\n"
                    "rule cc\n"
                    "    command     = $cc $cflags -MD -MF $out.d -c $in -o $out\n"
@@ -70,14 +41,45 @@ int main(int argc, char** argv, char** envp) {
     for (int i = 0; i < nmains; i++) {
         fprintf(ninja, "build bin/%s: link obj/%s.o\n", mains[i], mains[i]);
     }
-
     fclose(ninja);
+}
 
-    pid_t pid;
-    posix_spawnp(&pid, "ninja", NULL, NULL, ninja_argv, envp);
-    waitpid(pid, NULL, 0);
-    free(ninja_argv);
+int main(int argc, char** argv, char** envp) {
+    enum BuildType bt = kDefault;
 
+    char** ninja_argv = calloc((size_t)argc+1, sizeof(char*));
+    char** np = ninja_argv;
+    *np++ = "ninja";
+
+    for (int i = 1; i < argc; i++) {
+        if (0 == strcmp(argv[i], "--debug"))   { bt = kDebug;   continue; }
+        if (0 == strcmp(argv[i], "--release")) { bt = kRelease; continue; }
+        if (0 == strcmp(argv[i], "--asan"))    { bt = kASAN;    continue; }
+        if (0 == strcmp(argv[i], "--tsan"))    { bt = kTSAN;    continue; }
+        if (0 == strcmp(argv[i], "--help")) {
+            printf("`ob`, opinionated build\n"
+                   "=======================\n\n"
+                   "`ob` builds C programs if they are structured in its opinionated way.\n\n"
+                   "To bootstrap:\n\n"
+                   "    mkdir -p bin; cc ob.c -o bin/ob\n\n"
+                   "To build in default mode:\n\n"
+                   "    bin/ob\n\n"
+                   "To build in debug, release, ASAN, or TSAN mode:\n\n"
+                   "    bin/ob [--debug|--release|--asan|--tsan]\n\n"
+                   "To print this help:\n\n"
+                   "    bin/ob --help\n\n"
+                   "Any other flags are passed to Ninja.\n");
+            return 1;
+        }
+        *np++ = argv[i];
+    }
+
+    write_ninja("build.ninja", bt);
+    {
+        pid_t pid;
+        posix_spawnp(&pid, "ninja", NULL, NULL, ninja_argv, envp);
+        waitpid(pid, NULL, 0);
+    }
     remove("build.ninja");
     return 0;
 }
