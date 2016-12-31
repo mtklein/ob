@@ -48,8 +48,9 @@ int main(int argc, char** argv, char** envp) {
                    "    description = link $out\n");
 
     fprintf(ninja, "cc = clang");
-    if (bt == kASAN) { fprintf(ninja, " -fsanitize=address,undefined"); }
-    if (bt == kTSAN) { fprintf(ninja, " -fsanitize=thread"); }
+    if (bt == kASAN)    { fprintf(ninja, " -fsanitize=address,undefined"); }
+    if (bt == kTSAN)    { fprintf(ninja, " -fsanitize=thread"); }
+    if (bt == kRelease) { fprintf(ninja, " -flto=thin"); }
     fprintf(ninja, "\n");
 
     fprintf(ninja, "cflags = -fcolor-diagnostics");
