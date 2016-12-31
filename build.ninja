@@ -1,0 +1,17 @@
+builddir = obj
+
+cxx    = clang++ -Weverything -Wno-c++98-compat -Wno-padded
+cflags = -g -Os -std=c++14 -Werror
+
+rule compile
+    command     = $cxx $cflags -MD -MF $out.d -c $in -o $out
+    depfile     = $out.d
+    deps        = gcc
+    description = compile $out
+
+rule link
+    command     = $cxx $in -o $out
+    description = link $out
+
+build obj/ob.o: compile ob.cc
+build bin/ob: link obj/ob.o
