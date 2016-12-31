@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 // srcs:  git ls-files "**.c"
-// mains: git grep -lwI "int main" "**.c"
+// mains: git grep -lw "int main" "**.c"
 
 enum BuildType { kDefault, kDebug, kRelease, kASAN, kTSAN };
 
