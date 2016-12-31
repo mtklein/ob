@@ -42,10 +42,16 @@ int main(int argc, char** argv) {
 
 
     printf("rule ob\n");
-    printf("    command = $in > $out\n");
+    printf("    command = $in");
+    switch (options.build_type) {
+        case Options::Dev:                    break;
+        case Options::Debug:   printf(" -d"); break;
+        case Options::Release: printf(" -r"); break;
+    }
+    printf(" > $out\n");
+
     printf("build build.ninja: ob bin/ob\n");
-    printf("    generator = 1\n");
-    printf("\n");
+    printf("    generator = 1\n\n");
 
     printf("builddir = obj\n");
     printf("cxx      = clang++ -fcolor-diagnostics\n");
@@ -56,8 +62,7 @@ int main(int argc, char** argv) {
     if (options.build_type != Options::Debug) {
         printf(" -Os");
     }
-    printf("\n");
-    printf("\n");
+    printf("\n\n");
 
     printf("rule compile\n"
            "    command     = $cxx $cflags -MD -MF $out.d -c $in -o $out\n"
@@ -67,8 +72,7 @@ int main(int argc, char** argv) {
            "\n"
            "rule link\n"
            "    command     = $cxx $in -o $out\n"
-           "    description = link $out\n");
-    printf("\n");
+           "    description = link $out\n\n");
 
     for (auto&& target : targets) {
         printf("build obj/%s.o: compile %s.cc\n", target, target);
