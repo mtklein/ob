@@ -5,16 +5,16 @@
 
 To bootstrap:
 
-    $ ninja
+    $ mkdir -p bin; clang ob.c -o bin/ob
 
 To use in dev mode:
 
-    $ bin/ob > build.ninja
+    $ bin/ob; ninja
 
 To use in debug mode:
 
-    $ bin/ob -d > build.ninja
+    $ bin/ob -d; ninja
 
 To use in release mode:
 
-    $ bin/ob -r > build.ninja
+    $ bin/ob -r; ninja

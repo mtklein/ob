@@ -1,63 +1,63 @@
 #include <stdio.h>
-#include <string.h>
+#include <unistd.h>
 
 enum BuildType { kDev, kDebug, kRelease };
 
 int main(int argc, char** argv) {
     enum BuildType bt = kDev;
-
     for (int i = 1; i < argc; i++) {
-        if (0 == strcmp(argv[i], "-d")) { bt = kDebug;   }
-        if (0 == strcmp(argv[i], "-r")) { bt = kRelease; }
+        if (argv[i][0] == '-' && argv[i][1] == 'd') { bt = kDebug;   }
+        if (argv[i][0] == '-' && argv[i][1] == 'r') { bt = kRelease; }
     }
 
-    printf("rule ob\n");
-    printf("    command = $in");
+    FILE* ninja = fopen("build.ninja", "w");
+    fprintf(ninja, "rule ob\n");
+    fprintf(ninja, "    command = $in");
     switch (bt) {
-        case kDev:                    break;
-        case kDebug:   printf(" -d"); break;
-        case kRelease: printf(" -r"); break;
+        case kDev:                            break;
+        case kDebug:   fprintf(ninja, " -d"); break;
+        case kRelease: fprintf(ninja, " -r"); break;
     }
-    printf(" > $out\n");
+    fprintf(ninja, "\n");
 
-    printf("build build.ninja: ob bin/ob\n");
-    printf("    generator = 1\n\n");
+    fprintf(ninja, "build build.ninja: ob bin/ob\n");
+    fprintf(ninja, "    generator = 1\n\n");
 
-    printf("builddir = obj\n");
-    printf("cc       = clang\n");
-    printf("cflags   = -fcolor-diagnostics");
+    fprintf(ninja, "builddir = obj\n");
+    fprintf(ninja, "cc       = clang\n");
+    fprintf(ninja, "cflags   = -fcolor-diagnostics");
     if (bt != kRelease) {
-        printf(" -g -Werror -Weverything -Wno-padded");
+        fprintf(ninja, " -g -Werror -Weverything -Wno-padded");
     }
     if (bt != kDebug) {
-        printf(" -Os");
+        fprintf(ninja, " -Os");
     }
     if (bt == kRelease) {
-        printf(" -DNDEBUG");
+        fprintf(ninja, " -DNDEBUG");
     }
-    printf("\n");
+    fprintf(ninja, "\n");
 
-    printf("rule cc\n"
-           "    command     = $cc $cflags -MD -MF $out.d -c $in -o $out\n"
-           "    depfile     = $out.d\n"
-           "    deps        = gcc\n"
-           "    description = compile $out\n"
-           "\n"
-           "rule link\n"
-           "    command     = $cc $in -o $out\n"
-           "    description = link $out\n\n");
+    fprintf(ninja, "rule cc\n"
+                   "    command     = $cc $cflags -MD -MF $out.d -c $in -o $out\n"
+                   "    depfile     = $out.d\n"
+                   "    deps        = gcc\n"
+                   "    description = compile $out\n"
+                   "rule link\n"
+                   "    command     = $cc $in -o $out\n"
+                   "    description = link $out\n\n");
 
     const char* srcs[] = { "hello", "ob" };
     int nsrcs = sizeof(srcs) / sizeof(*srcs);
     for (int i = 0; i < nsrcs; i++) {
-        printf("build obj/%s.o: cc %s.c\n", srcs[i], srcs[i]);
+        fprintf(ninja, "build obj/%s.o: cc %s.c\n", srcs[i], srcs[i]);
     }
 
     const char* mains[] = { "hello", "ob" };
     int nmains = sizeof(srcs) / sizeof(*mains);
     for (int i = 0; i < nmains; i++) {
-        printf("build bin/%s: link obj/%s.o\n", mains[i], mains[i]);
+        fprintf(ninja, "build bin/%s: link obj/%s.o\n", mains[i], mains[i]);
     }
 
+    fclose(ninja);
     return 0;
 }
