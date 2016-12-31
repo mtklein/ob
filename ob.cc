@@ -15,8 +15,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    const char* targets[] = { "ob" };
-    const char*   mains[] = { "ob" };
+    const char* srcs_c [] = { "hello" };
+    const char* srcs_cc[] = { "ob" };
+    const char*   mains[] = { "hello", "ob" };
 
 
     printf("rule ob\n");
@@ -31,19 +32,33 @@ int main(int argc, char** argv) {
     printf("build build.ninja: ob bin/ob\n");
     printf("    generator = 1\n\n");
 
-    printf("builddir = obj\n");
-    printf("cxx      = clang++ -fcolor-diagnostics\n");
-    printf("cflags   = -std=c++14");
+    printf("builddir  = obj\n");
+    printf("cc        = clang\n");
+    printf("cxx       = clang++\n");
+    printf("cflags    = -fcolor-diagnostics");
     if (build_type != BuildType::Release) {
-        printf(" -g -Werror -Weverything -Wno-c++98-compat -Wno-padded");
+        printf(" -g -Werror -Weverything -Wno-padded");
     }
     if (build_type != BuildType::Debug) {
         printf(" -Os");
     }
+    printf("\n");
+
+    printf("cflags_c  = -std=c11\n");
+    printf("cflags_cc = -std=c++14");
+    if (build_type != BuildType::Release) {
+        printf(" -Wno-c++98-compat");
+    }
     printf("\n\n");
 
-    printf("rule compile\n"
-           "    command     = $cxx $cflags -MD -MF $out.d -c $in -o $out\n"
+    printf("rule cc\n"
+           "    command     = $cc $cflags $cflags_c -MD -MF $out.d -c $in -o $out\n"
+           "    depfile     = $out.d\n"
+           "    deps        = gcc\n"
+           "    description = compile $out\n"
+           "\n"
+           "rule cxx\n"
+           "    command     = $cxx $cflags $cflags_cc -MD -MF $out.d -c $in -o $out\n"
            "    depfile     = $out.d\n"
            "    deps        = gcc\n"
            "    description = compile $out\n"
@@ -52,8 +67,12 @@ int main(int argc, char** argv) {
            "    command     = $cxx $in -o $out\n"
            "    description = link $out\n\n");
 
-    for (auto&& target : targets) {
-        printf("build obj/%s.o: compile %s.cc\n", target, target);
+    for (auto&& target : srcs_c) {
+        printf("build obj/%s.o: cc %s.c\n", target, target);
+    }
+    printf("\n");
+    for (auto&& target : srcs_cc) {
+        printf("build obj/%s.o: cxx %s.cc\n", target, target);
     }
     printf("\n");
 
