@@ -40,7 +40,11 @@ cxx = os.getenv('CXX', 'clang++')
 is_clang = 'clang' in cc and 'clang' in cxx
 
 
-cppflags = [ '-fPIC' ] + os.getenv('CPPFLAGS', '').split()
+cppflags = [ '-fPIC' ]
+cflags   = ['-std=c11']
+cxxflags = ['-std=c++14', '-fno-exceptions', '-fno-rtti']
+ldflags  = []
+
 if is_clang:
     cppflags.append('-fcolor-diagnostics')
 if args.mode != 'debug':
@@ -51,10 +55,6 @@ if args.mode != 'release':
 if args.mode == 'release':
     cppflags.append('-DNDEBUG')
 
-cflags   = ['-std=c11'  ] + os.getenv('CFLAGS'  , '').split()
-cxxflags = ['-std=c++14'] + os.getenv('CXXFLAGS', '').split()
-ldflags  = [] + os.getenv('LDFLAGS', '').split()
-
 if args.mode == 'asan':
     cppflags.append('-fsanitize=address,undefined')
     ldflags .append('-fsanitize=address,undefined')
@@ -64,6 +64,11 @@ if args.mode == 'tsan':
 if args.mode == 'release':
     cppflags.extend(['-flto', '-fomit-frame-pointer'])
     ldflags .extend(['-flto'])
+
+cppflags += os.getenv('CPPFLAGS', '').split()
+cflags   += os.getenv('CFLAGS'  , '').split()
+cxxflags += os.getenv('CXXFLAGS', '').split()
+ldflags  += os.getenv('LDFLAGS' , '').split()
 
 def git_grep(*args):
     p = subprocess.Popen(['git', 'grep'] + list(args), stdout=subprocess.PIPE)
