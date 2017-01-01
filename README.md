@@ -2,6 +2,7 @@
 =======================
 
 `ob` builds C and C++ programs if they are structured in its opinionated way:
+- each source file is tracked in Git;
 - each `#include` within the project is source-relative;
 - each `foo.c` or `foo.cc` defines `int main(...)` or has a corresponding `foo.h`;
 - each `foo_test.c` or `foo_test.cc` is a unit test that is expected to return 0.
