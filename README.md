@@ -20,4 +20,4 @@ Any other command line flags or arguments are passed to Ninja.
 
 TODO
 ----
-- auto-detect files with `_test` in their name containing `int main(...)`, build, and run them
+- auto-detect files with `_test` in their name containing `int main(...)`, build them, run them
