@@ -38,7 +38,7 @@ args,ninja_args = parser.parse_known_args()
 
 is_osx = sys.platform == 'darwin'
 
-cc  = os.getenv('CC',  'clang' if is_osx else 'cc')
+cc  = os.getenv('CC', 'clang' if is_osx else 'cc')
 cxx = os.getenv('CXX', cc)
 is_clang = 'clang' in cc and 'clang' in cxx
 
