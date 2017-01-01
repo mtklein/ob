@@ -1,7 +1,9 @@
 #!/usr/bin/env python2.7
 
 import argparse
+import collections
 import os
+import re
 import subprocess
 import sys
 
@@ -18,8 +20,9 @@ rule link
 '''
 
 parser = argparse.ArgumentParser(description='ob, opinionated builder')
-parser.add_argument('mode', nargs='?', type=str, default='default',
-                    help='(default), debug, release, asan, or tsan')
+for mode in ['debug', 'release', 'ASAN', 'TSAN']:
+    parser.add_argument('-'+mode.upper()[0], '--'+mode.lower(),
+                        action='store_const', dest='mode', const=mode.lower(), help=mode)
 args,ninja_args = parser.parse_known_args()
 
 cc = 'clang'
@@ -38,17 +41,43 @@ if args.mode != 'release':
 if args.mode == 'release':
     cflags += ' -DNDEBUG'
 
-srcs  = subprocess.check_output(['git', 'ls-files', '**.c']).split()
 mains = subprocess.check_output(['git', 'grep', '-lw', 'int main', '**.c']).split()
+
+srcs = set()
+todo = list(mains)
+deps = collections.defaultdict(set)
+
+include = re.compile('#include "(.*)\.h')
+while todo:
+    src = todo.pop()
+    srcs.add(src)
+    for line in open(src):
+        line = line.strip()
+        m = include.match(line)
+        if m:
+            dep = m.group(1) + '.c'
+            dep = os.path.join(os.path.dirname(src), dep)
+            if dep != src:
+                deps[src].add(dep)
+            if dep not in srcs:
+                todo.append(dep)
+
+def ext(path, new_ext):
+    return os.path.splitext(path)[0] + new_ext
+
+def resolve_deps(path):
+    objs = {os.path.join('obj', ext(path,'.o'))}
+    for dep in deps[path]:
+        objs.update(resolve_deps(dep))
+    return objs
 
 with open('build.ninja', 'w') as f:
     f.write(template.format(cc=cc, cflags=cflags))
     for src in srcs:
-        key, _ = os.path.splitext(src)
-        f.write('build obj/{key}.o: cc {key}.c\n'.format(key=key))
+        f.write('build obj/{obj}: cc {src}\n'.format(obj=ext(src,'.o'), src=src))
     for src in mains:
-        key, _ = os.path.splitext(src)
-        f.write('build bin/{key}: link obj/{key}.o\n'.format(key=key))
+        f.write('build bin/{exe}: link {objs}\n'.format(exe=ext(src,''),
+                                                        objs=' '.join(sorted(resolve_deps(src)))))
 
 rc = subprocess.call(['ninja'] + ninja_args)
 os.remove('build.ninja')
