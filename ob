@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 template = '''
-builddir = obj
+builddir = out
 rule cc
     command     = {cc} -x c {cppflags} {cflags} -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
@@ -27,6 +27,7 @@ rule link_cxx
     description = link $out
 rule run
     command     = ./$in > $out
+    description = run $in
 '''
 
 parser = argparse.ArgumentParser(description='ob, opinionated builder')
@@ -103,13 +104,13 @@ def ext(path, new_ext):
     return os.path.splitext(path)[0] + new_ext
 
 def resolve_deps(path):
-    link_cxx = path.endswith('.cc')
-    objs = {os.path.join('obj', ext(path,'.o'))}
+    any_cxx = path.endswith('.cc')
+    objs = {os.path.join('out', ext(path,'.o'))}
     for dep in deps[path]:
-        _objs, _link_cxx = resolve_deps(dep)
+        _objs, _any_cxx = resolve_deps(dep)
         objs.update(_objs)
-        link_cxx = link_cxx or _link_cxx
-    return objs, link_cxx
+        any_cxx = any_cxx or _any_cxx
+    return objs, any_cxx
 
 with open('build.ninja', 'w') as f:
     f.write(template.format(cc=cc, cxx=cxx,
@@ -118,17 +119,17 @@ with open('build.ninja', 'w') as f:
                             cxxflags=' '.join(cxxflags),
                             ldflags =' '.join(ldflags)))
     for src in srcs_cc:
-        f.write('build obj/{obj}: cc {src}\n'.format(obj=ext(src,'.o'), src=src))
+        f.write('build out/{obj}: cc {src}\n'.format(obj=ext(src,'.o'), src=src))
     for src in srcs_cxx:
-        f.write('build obj/{obj}: cxx {src}\n'.format(obj=ext(src,'.o'), src=src))
+        f.write('build out/{obj}: cxx {src}\n'.format(obj=ext(src,'.o'), src=src))
     for src in mains:
-        objs, link_cxx = resolve_deps(src)
-        link = 'link_cxx' if link_cxx else 'link_cc'
-        f.write('build bin/{exe}: {link} {objs}\n'.format(exe=ext(src,''),
-                                                          link=link,
+        objs, any_cxx = resolve_deps(src)
+        exe = os.path.basename(ext(src, ''))
+        f.write('build out/{exe}: {link} {objs}\n'.format(exe=exe,
+                                                          link='link_cxx' if any_cxx else 'link_cc',
                                                           objs=' '.join(sorted(objs))))
         if '_test' in src:
-            f.write('build expected/{exe}: run bin/{exe}\n'.format(exe=ext(src,'')))
+            f.write('build out/{exe}.log: run out/{exe}\n'.format(exe=exe))
 
 rc = subprocess.call(['ninja'] + ninja_args)
 os.remove('build.ninja')
