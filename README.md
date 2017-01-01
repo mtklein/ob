@@ -5,7 +5,7 @@
 - each source file is tracked in Git;
 - each `#include` within the project is source-relative;
 - each `foo.c` or `foo.cc` defines `int main(...)` or has a corresponding `foo.h`;
-- each `foo_test.c` or `foo_test.cc` is a unit test that is expected to return 0.
+- each source file defining `int main(...)` with `test` in its name is a unit test.
 
 To build in default mode:
 
