@@ -17,3 +17,7 @@ Any other command line flags or arguments are passed to Ninja.
 
 `ob` recognizes the following environment variables:
 `CC`, `CXX`, `CPPFLAGS`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`.
+
+TODO
+----
+- auto-detect files with `_test` in their name containing `int main(...)`, build, and run them
