@@ -2,6 +2,7 @@
 =======================
 
 `ob` builds C programs if they are structured in its opinionated way:
+
     - each #include within the project is source-relative;
     - each foo.c defines int main(...) or has a corresponding foo.h.
 
