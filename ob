@@ -47,6 +47,8 @@ ldflags  = []
 
 if is_clang:
     cppflags.append('-fcolor-diagnostics')
+    cppflags.append('-arch x86_64 -arch x86_64h')
+    ldflags .append('-arch x86_64 -arch x86_64h')
 if args.mode != 'debug':
     cppflags.append('-Os')
 if args.mode != 'release':
