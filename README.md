@@ -13,4 +13,6 @@ To build in debug, release, ASAN, or TSAN mode:
 
     ob [-D|--debug] [-R|--release] [-A|--asan] [-T|--tsan]
 
-Any other flags and arguments are passed to Ninja.
+Any other command line flags or arguments are passed to Ninja.
+
+`ob` recognizes the following environment variables: `CC`, `CFLAGS`, `LDFLAGS`.

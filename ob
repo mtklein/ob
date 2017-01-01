@@ -15,7 +15,7 @@ rule cc
     deps        = gcc
     description = compile $out
 rule link
-    command     = {cc} $in -o $out
+    command     = {cc} {ldflags} $in -o $out
     description = link $out
 '''
 
@@ -25,7 +25,9 @@ for mode in ['debug', 'release', 'ASAN', 'TSAN']:
                         action='store_const', dest='mode', const=mode.lower(), help=mode)
 args,ninja_args = parser.parse_known_args()
 
-cc = 'clang'
+cc = os.getenv('CC', 'clang')
+is_clang = 'clang' in cc
+
 if args.mode == 'asan':
     cc += ' -fsanitize=address,undefined'
 if args.mode == 'tsan':
@@ -33,13 +35,18 @@ if args.mode == 'tsan':
 if args.mode == 'release':
     cc += ' -flto -fomit-frame-pointer'
 
-cflags = '-fcolor-diagnostics -fPIC'
+cflags = '-fPIC'
+cflags += ' -fcolor-diagnostics' if is_clang else ' -fdiagnostics-color'
 if args.mode != 'debug':
     cflags += ' -Os'
 if args.mode != 'release':
-    cflags += ' -Werror -Weverything -Wno-padded'
+    cflags += ' -Werror'
+    cflags += ' -Weverything -Wno-padded' if is_clang else ' -Wall -Wextra'
 if args.mode == 'release':
     cflags += ' -DNDEBUG'
+cflags += ' ' + os.getenv('CFLAGS', '')
+
+ldflags = os.getenv('LDFLAGS', '')
 
 mains = subprocess.check_output(['git', 'grep', '-lw', 'int main', '**.c']).split()
 
@@ -72,7 +79,7 @@ def resolve_deps(path):
     return objs
 
 with open('build.ninja', 'w') as f:
-    f.write(template.format(cc=cc, cflags=cflags))
+    f.write(template.format(cc=cc, cflags=cflags, ldflags=ldflags))
     for src in srcs:
         f.write('build obj/{obj}: cc {src}\n'.format(obj=ext(src,'.o'), src=src))
     for src in mains:
