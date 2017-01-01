@@ -36,7 +36,9 @@ for mode in ['debug', 'release', 'ASAN', 'TSAN']:
                         action='store_const', dest='mode', const=mode.lower(), help=mode)
 args,ninja_args = parser.parse_known_args()
 
-cc  = os.getenv('CC',  'clang')
+is_osx = sys.platform == 'darwin'
+
+cc  = os.getenv('CC',  'clang' if is_osx else 'cc')
 cxx = os.getenv('CXX', cc)
 is_clang = 'clang' in cc and 'clang' in cxx
 
@@ -47,8 +49,9 @@ ldflags  = []
 
 if is_clang:
     cppflags.append('-fcolor-diagnostics')
-    cppflags.append('-arch x86_64 -arch x86_64h')
-    ldflags .append('-arch x86_64 -arch x86_64h')
+    if is_osx:
+        cppflags.append('-arch x86_64 -arch x86_64h')
+        ldflags .append('-arch x86_64 -arch x86_64h')
 if args.mode != 'debug':
     cppflags.append('-Os')
 if args.mode != 'release':
