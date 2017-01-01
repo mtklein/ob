@@ -1,7 +1,9 @@
 `ob`, opinionated build
 =======================
 
-`ob` builds C programs if they are structured in its opinionated way.
+`ob` builds C programs if they are structured in its opinionated way:
+    - each #include within the project is source-relative;
+    - each foo.c defines int main(...) or has a corresponding foo.h.
 
 To build in default mode:
 
@@ -9,6 +11,6 @@ To build in default mode:
 
 To build in debug, release, ASAN, or TSAN mode:
 
-    ob [debug|release|asan|tsan]
+    ob [-D|--debug] [-R|--release] [-A|--asan] [-T|--tsan]
 
-Any other flags are passed to Ninja.
+Any other flags and arguments are passed to Ninja.
