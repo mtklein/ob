@@ -31,7 +31,7 @@ if args.mode == 'asan':
 if args.mode == 'tsan':
     cc += ' -fsanitize=thread'
 if args.mode == 'release':
-    cc += ' -flto'
+    cc += ' -flto -fomit-frame-pointer'
 
 cflags = '-fcolor-diagnostics -fPIC'
 if args.mode != 'debug':
