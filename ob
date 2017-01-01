@@ -9,17 +9,17 @@ import sys
 
 template = '''
 builddir = out
-rule cc
+rule compile_c
     command     = {cc} -x c {cppflags} {cflags} -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
-rule cxx
+rule compile_cxx
     command     = {cxx} -x c++ {cppflags} {cxxflags} -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
-rule link_cc
+rule link_c
     command     = {cc} {ldflags} $in -o $out
     description = link $out
 rule link_cxx
@@ -80,15 +80,14 @@ def git_grep(*args):
 
 mains = git_grep('-lw', 'int main', '**.c') + git_grep('-lw', 'int main', '**.cc')
 
-srcs_cc  = set()
-srcs_cxx = set()
+srcs = set()
 todo = list(mains)
 deps = collections.defaultdict(set)
 
 include = re.compile('#include "(.*)\.h')
 while todo:
     src = todo.pop()
-    (srcs_cc if src.endswith('.c') else srcs_cxx).add(src)
+    srcs.add(src)
     for line in open(src):
         m = include.match(line.strip())
         if not m:
@@ -99,7 +98,7 @@ while todo:
                 continue
             if dep != src:
                 deps[src].add(dep)
-            if dep not in srcs_cc and dep not in srcs_cxx:
+            if dep not in srcs:
                 todo.append(dep)
 
 def ext(path, new_ext):
@@ -120,15 +119,14 @@ with open('build.ninja', 'w') as f:
                             cflags  =' '.join(cflags),
                             cxxflags=' '.join(cxxflags),
                             ldflags =' '.join(ldflags)))
-    for src in srcs_cc:
-        f.write('build out/{obj}: cc {src}\n'.format(obj=ext(src,'.o'), src=src))
-    for src in srcs_cxx:
-        f.write('build out/{obj}: cxx {src}\n'.format(obj=ext(src,'.o'), src=src))
+    for src in srcs:
+        rule = 'compile_cxx' if src.endswith('.cc') else 'compile_c'
+        f.write('build out/{obj}: {rule} {src}\n'.format(obj=ext(src,'.o'), rule=rule, src=src))
     for src in mains:
         objs, any_cxx = resolve_deps(src)
         exe = os.path.basename(ext(src, ''))
-        f.write('build out/{exe}: {link} {objs}\n'.format(exe=exe,
-                                                          link='link_cxx' if any_cxx else 'link_cc',
+        rule = 'link_cxx' if any_cxx else 'link_c'
+        f.write('build out/{exe}: {rule} {objs}\n'.format(exe=exe, rule=rule,
                                                           objs=' '.join(sorted(objs))))
         if '_test' in src:
             f.write('build out/{exe}.log: run out/{exe}\n'.format(exe=exe))
