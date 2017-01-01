@@ -14,7 +14,7 @@ static void square(int* a, int* b, int* c, int* d) {
     *d = bc + dd;
 }
 
-static void mul_q(int* a, int* b, int* c, int* d) {
+static void mul_1110(int* a, int* b, int* c, int* d) {
     int A = *a + *b,
         B = *a,
         C = *c + *d,
@@ -24,14 +24,9 @@ static void mul_q(int* a, int* b, int* c, int* d) {
 
 int fib(int n) {
     int a = 1, b = 1, c = 1, d = 0;
-    for (int i = 1; i <= n; ) {
-        if (i+i <= n) {
-            square(&a,&b,&c,&d);
-            i += i;
-        } else {
-            mul_q(&a,&b,&c,&d);
-            i += 1;
-        }
-    }
+
+    int i = 1;
+    for (; i+i <= n; i += i) { square  (&a,&b,&c,&d); }
+    for (;   i <= n; i += 1) { mul_1110(&a,&b,&c,&d); }
     return d;
 }
