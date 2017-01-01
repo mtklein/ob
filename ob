@@ -110,14 +110,11 @@ while todo:
 def ext(path, new_ext):
     return os.path.splitext(path)[0] + new_ext
 
-def resolve_deps(path):
-    any_cxx = path.endswith('.cc')
-    objs = {os.path.join('out', ext(path,'.o'))}
-    for dep in deps[path]:
-        _objs, _any_cxx = resolve_deps(dep)
-        objs.update(_objs)
-        any_cxx = any_cxx or _any_cxx
-    return objs, any_cxx
+def deps_of(src):
+    srcs = {src}
+    for dep in deps[src]:
+        srcs.update(deps_of(dep))
+    return srcs
 
 with open('build.ninja', 'w') as f:
     f.write(template.format(cc=cc, cxx=cxx,
@@ -126,14 +123,14 @@ with open('build.ninja', 'w') as f:
                             cxxflags=' '.join(cxxflags),
                             ldflags =' '.join(ldflags)))
     for src in srcs:
-        rule = 'compile_cxx' if src.endswith('.cc') else 'compile_c'
+        rule = 'compile_c' if src.endswith('.c') else 'compile_cxx'
         f.write('build out/{obj}: {rule} {src}\n'.format(obj=ext(src,'.o'), rule=rule, src=src))
     for src in mains:
-        objs, any_cxx = resolve_deps(src)
         exe = os.path.basename(ext(src, ''))
-        rule = 'link_cxx' if any_cxx else 'link_c'
-        f.write('build out/{exe}: {rule} {objs}\n'.format(exe=exe, rule=rule,
-                                                          objs=' '.join(sorted(objs))))
+        all_deps = deps_of(src)
+        rule = 'link_c' if all(d.endswith('.c') for d in all_deps) else 'link_cxx'
+        objs = ' '.join(sorted([os.path.join('out', ext(d,'.o')) for d in all_deps]))
+        f.write('build out/{exe}: {rule} {objs}\n'.format(exe=exe, rule=rule, objs=objs))
         if 'test' in src:
             f.write('build out/{exe}.log: run out/{exe}\n'.format(exe=exe))
 
