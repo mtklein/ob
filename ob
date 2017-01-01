@@ -134,7 +134,7 @@ with open('build.ninja', 'w') as f:
         rule = 'link_cxx' if any_cxx else 'link_c'
         f.write('build out/{exe}: {rule} {objs}\n'.format(exe=exe, rule=rule,
                                                           objs=' '.join(sorted(objs))))
-        if '_test' in src:
+        if 'test' in src:
             f.write('build out/{exe}.log: run out/{exe}\n'.format(exe=exe))
 
 rc = subprocess.call(['ninja'] + ninja_args)
