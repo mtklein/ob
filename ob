@@ -10,12 +10,12 @@ import sys
 template = '''
 builddir = obj
 rule cc
-    command     = {cc} {cppflags} {cflags} -MMD -MF $out.d -c $in -o $out
+    command     = {cc} -x c {cppflags} {cflags} -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
 rule cxx
-    command     = {cxx} {cppflags} {cxxflags} -MMD -MF $out.d -c $in -o $out
+    command     = {cxx} -x c++ {cppflags} {cxxflags} -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
@@ -23,7 +23,7 @@ rule link_cc
     command     = {cc} {ldflags} $in -o $out
     description = link $out
 rule link_cxx
-    command     = {cxx} {ldflags} $in -o $out
+    command     = {cxx} -lc++ {ldflags} $in -o $out
     description = link $out
 rule run
     command     = ./$in > $out
@@ -36,9 +36,8 @@ for mode in ['debug', 'release', 'ASAN', 'TSAN']:
 args,ninja_args = parser.parse_known_args()
 
 cc  = os.getenv('CC',  'clang')
-cxx = os.getenv('CXX', 'clang++')
+cxx = os.getenv('CXX', cc)
 is_clang = 'clang' in cc and 'clang' in cxx
-
 
 cppflags = [ '-fPIC' ]
 cflags   = ['-std=c11']
