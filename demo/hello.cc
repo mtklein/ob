@@ -1,4 +1,6 @@
-#include "lib/print_hello.h"
+extern "C" {
+    #include "lib/print_hello.h"
+}
 #include <assert.h>
 #include <stdio.h>
 
