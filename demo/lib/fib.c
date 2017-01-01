@@ -23,12 +23,9 @@ static void mul_q(int* a, int* b, int* c, int* d) {
 }
 
 int fib(int n) {
-    if (n == 0) {
-        return 0;
-    }
     int a = 1, b = 1, c = 1, d = 0;
-    for (int i = 1; i < n; ) {
-        if (i+i < n) {
+    for (int i = 1; i <= n; ) {
+        if (i+i <= n) {
             square(&a,&b,&c,&d);
             i += i;
         } else {
@@ -36,5 +33,5 @@ int fib(int n) {
             i += 1;
         }
     }
-    return b;
+    return d;
 }
