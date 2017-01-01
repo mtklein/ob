@@ -56,7 +56,10 @@ if args.mode != 'debug':
     cppflags.append('-Os')
 if args.mode != 'release':
     cppflags.extend(['-g', '-Werror'])
-    cppflags.extend(['-Weverything', '-Wno-padded'] if is_clang else ['-Wall', '-Wextra'])
+    if is_clang:
+        cppflags.extend(['-Weverything', '-Wno-c++98-compat', '-Wno-padded'])
+    else:
+        cppflags.extend(['-Wall', '-Wextra'])
 if args.mode == 'release':
     cppflags.append('-DNDEBUG')
 if args.mode == 'asan':
