@@ -10,7 +10,7 @@ import sys
 template = '''
 builddir = obj
 rule cc
-    command     = {cc} {cflags} -MD -MF $out.d -c $in -o $out
+    command     = {cc} {cflags} -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
