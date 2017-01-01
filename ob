@@ -10,12 +10,20 @@ import sys
 template = '''
 builddir = obj
 rule cc
-    command     = {cc} {cflags} -MMD -MF $out.d -c $in -o $out
+    command     = {cc} {cppflags} {cflags} -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
-rule link
+rule cxx
+    command     = {cxx} {cppflags} {cxxflags} -MMD -MF $out.d -c $in -o $out
+    depfile     = $out.d
+    deps        = gcc
+    description = compile $out
+rule link_cc
     command     = {cc} {ldflags} $in -o $out
+    description = link $out
+rule link_cxx
+    command     = {cxx} {ldflags} $in -o $out
     description = link $out
 '''
 
@@ -25,66 +33,87 @@ for mode in ['debug', 'release', 'ASAN', 'TSAN']:
                         action='store_const', dest='mode', const=mode.lower(), help=mode)
 args,ninja_args = parser.parse_known_args()
 
-cc = os.getenv('CC', 'clang')
-is_clang = 'clang' in cc
+cc  = os.getenv('CC',  'clang')
+cxx = os.getenv('CXX', 'clang++')
+is_clang = 'clang' in cc and 'clang' in cxx
+
+
+cppflags = [ '-fPIC' ] + os.getenv('CPPFLAGS', '').split()
+if is_clang:
+    cppflags.append('-fcolor-diagnostics')
+if args.mode != 'debug':
+    cppflags.append('-Os')
+if args.mode != 'release':
+    cppflags.append('-Werror')
+    cppflags.extend(['-Weverything', '-Wno-padded'] if is_clang else ['-Wall', '-Wextra'])
+if args.mode == 'release':
+    cppflags.append('-DNDEBUG')
+
+cflags   = ['-std=c11'  ] + os.getenv('CFLAGS'  , '').split()
+cxxflags = ['-std=c++14'] + os.getenv('CXXFLAGS', '').split()
+ldflags  = [] + os.getenv('LDFLAGS', '').split()
 
 if args.mode == 'asan':
-    cc += ' -fsanitize=address,undefined'
+    cppflags.append('-fsanitize=address,undefined')
+    ldflags .append('-fsanitize=address,undefined')
 if args.mode == 'tsan':
-    cc += ' -fsanitize=thread'
+    cppflags.append('-fsanitize=thread')
+    ldflags .append('-fsanitize=thread')
 if args.mode == 'release':
-    cc += ' -flto -fomit-frame-pointer'
+    cppflags.extend(['-flto', '-fomit-frame-pointer'])
+    ldflags .extend(['-flto'])
 
-cflags = '-fPIC'
-cflags += ' -fcolor-diagnostics' if is_clang else ' -fdiagnostics-color'
-if args.mode != 'debug':
-    cflags += ' -Os'
-if args.mode != 'release':
-    cflags += ' -Werror'
-    cflags += ' -Weverything -Wno-padded' if is_clang else ' -Wall -Wextra'
-if args.mode == 'release':
-    cflags += ' -DNDEBUG'
-cflags += ' ' + os.getenv('CFLAGS', '')
+mains = ( subprocess.check_output(['git', 'grep', '-lw', 'int main', '**.c' ]).split() +
+          subprocess.check_output(['git', 'grep', '-lw', 'int main', '**.cc']).split() )
 
-ldflags = os.getenv('LDFLAGS', '')
-
-mains = subprocess.check_output(['git', 'grep', '-lw', 'int main', '**.c']).split()
-
-srcs = set()
+srcs_cc  = set()
+srcs_cxx = set()
 todo = list(mains)
 deps = collections.defaultdict(set)
 
 include = re.compile('#include "(.*)\.h')
 while todo:
     src = todo.pop()
-    srcs.add(src)
+    (srcs_cc if src.endswith('.c') else srcs_cxx).add(src)
     for line in open(src):
         line = line.strip()
         m = include.match(line)
         if m:
-            dep = m.group(1) + '.c'
-            dep = os.path.join(os.path.dirname(src), dep)
+            dep = filter(os.path.exists, [os.path.join(os.path.dirname(src), d)
+                                          for d in [m.group(1)+'.c', m.group(1)+'.cc']])[0]
             if dep != src:
                 deps[src].add(dep)
-            if dep not in srcs:
+            if dep not in srcs_cc and dep not in srcs_cxx:
                 todo.append(dep)
 
 def ext(path, new_ext):
     return os.path.splitext(path)[0] + new_ext
 
 def resolve_deps(path):
+    link_cxx = path.endswith('.cc')
     objs = {os.path.join('obj', ext(path,'.o'))}
     for dep in deps[path]:
-        objs.update(resolve_deps(dep))
-    return objs
+        _objs, _link_cxx = resolve_deps(dep)
+        objs.update(_objs)
+        link_cxx = link_cxx or _link_cxx
+    return objs, link_cxx
 
 with open('build.ninja', 'w') as f:
-    f.write(template.format(cc=cc, cflags=cflags, ldflags=ldflags))
-    for src in srcs:
+    f.write(template.format(cc=cc, cxx=cxx,
+                            cppflags=' '.join(cppflags),
+                            cflags  =' '.join(cflags),
+                            cxxflags=' '.join(cxxflags),
+                            ldflags =' '.join(ldflags)))
+    for src in srcs_cc:
         f.write('build obj/{obj}: cc {src}\n'.format(obj=ext(src,'.o'), src=src))
+    for src in srcs_cxx:
+        f.write('build obj/{obj}: cxx {src}\n'.format(obj=ext(src,'.o'), src=src))
     for src in mains:
-        f.write('build bin/{exe}: link {objs}\n'.format(exe=ext(src,''),
-                                                        objs=' '.join(sorted(resolve_deps(src)))))
+        objs, link_cxx = resolve_deps(src)
+        link = 'link_cxx' if link_cxx else 'link_cc'
+        f.write('build bin/{exe}: {link} {objs}\n'.format(exe=ext(src,''),
+                                                          link=link,
+                                                          objs=' '.join(sorted(objs))))
 
 rc = subprocess.call(['ninja'] + ninja_args)
 os.remove('build.ninja')

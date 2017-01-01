@@ -1,9 +1,9 @@
 `ob`, opinionated build
 =======================
 
-`ob` builds C programs if they are structured in its opinionated way:
+`ob` builds C and C++ programs if they are structured in its opinionated way:
 - each `#include` within the project is source-relative;
-- each `foo.c` defines `int main(...)` or has a corresponding `foo.h`.
+- each `foo.c` or `foo.cc` defines `int main(...)` or has a corresponding `foo.h`.
 
 To build in default mode:
 
@@ -15,4 +15,5 @@ To build in debug, release, ASAN, or TSAN mode:
 
 Any other command line flags or arguments are passed to Ninja.
 
-`ob` recognizes the following environment variables: `CC`, `CFLAGS`, `LDFLAGS`.
+`ob` recognizes the following environment variables:
+`CC`, `CXX`, `CPPFLAGS`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`.
