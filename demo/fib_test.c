@@ -1,9 +1,5 @@
+#include "check.h"
 #include "lib/fib.h"
-#include <stdio.h>
-#include <stdlib.h>
-
-#define CHECK(cond) \
-    do { if (!(cond)) { fprintf(stderr, "%s failed\n", #cond); exit(1); } } while(0)
 
 int main(void) {
     CHECK(fib(0) == 0);

@@ -87,12 +87,12 @@ while todo:
         line = line.strip()
         m = include.match(line)
         if m:
-            dep = filter(os.path.exists, [os.path.join(os.path.dirname(src), d)
-                                          for d in [m.group(1)+'.c', m.group(1)+'.cc']])[0]
-            if dep != src:
-                deps[src].add(dep)
-            if dep not in srcs_cc and dep not in srcs_cxx:
-                todo.append(dep)
+            for dep in filter(os.path.exists, [os.path.join(os.path.dirname(src), d)
+                                               for d in [m.group(1)+'.c', m.group(1)+'.cc']]):
+                if dep != src:
+                    deps[src].add(dep)
+                if dep not in srcs_cc and dep not in srcs_cxx:
+                    todo.append(dep)
 
 def ext(path, new_ext):
     return os.path.splitext(path)[0] + new_ext
