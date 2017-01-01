@@ -87,8 +87,10 @@ while todo:
         line = line.strip()
         m = include.match(line)
         if m:
-            for dep in filter(os.path.exists, [os.path.join(os.path.dirname(src), d)
-                                               for d in [m.group(1)+'.c', m.group(1)+'.cc']]):
+            for dep in [os.path.join(os.path.dirname(src), d)
+                        for d in [m.group(1)+'.c', m.group(1)+'.cc']]:
+                if not os.path.exists(dep):
+                    continue
                 if dep != src:
                     deps[src].add(dep)
                 if dep not in srcs_cc and dep not in srcs_cxx:
