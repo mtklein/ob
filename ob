@@ -42,7 +42,7 @@ cc  = os.getenv('CC', 'clang' if is_osx else 'cc')
 cxx = os.getenv('CXX', cc)
 is_clang = 'clang' in cc and 'clang' in cxx
 
-cppflags = [ '-fPIC' ]
+cppflags = ['-fPIC']
 cflags   = ['-std=c11']
 cxxflags = ['-std=c++14', '-fno-exceptions', '-fno-rtti']
 ldflags  = []
