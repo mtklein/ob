@@ -44,7 +44,7 @@ if is_clang:
 if args.mode != 'debug':
     cppflags.append('-Os')
 if args.mode != 'release':
-    cppflags.append('-Werror')
+    cppflags.extend(['-g', '-Werror'])
     cppflags.extend(['-Weverything', '-Wno-padded'] if is_clang else ['-Wall', '-Wextra'])
 if args.mode == 'release':
     cppflags.append('-DNDEBUG')
