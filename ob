@@ -63,8 +63,14 @@ if args.mode == 'release':
     cppflags.extend(['-flto', '-fomit-frame-pointer'])
     ldflags .extend(['-flto'])
 
-mains = ( subprocess.check_output(['git', 'grep', '-lw', 'int main', '**.c' ]).split() +
-          subprocess.check_output(['git', 'grep', '-lw', 'int main', '**.cc']).split() )
+def git_grep(*args):
+    p = subprocess.Popen(['git', 'grep'] + list(args), stdout=subprocess.PIPE)
+    stdout, _ = p.communicate()
+    if p.returncode and p.returncode != 1:
+        sys.exit(p.returncode)
+    return [line.strip() for line in stdout.split()]
+
+mains = git_grep('-lw', 'int main', '**.c') + git_grep('-lw', 'int main', '**.cc')
 
 srcs_cc  = set()
 srcs_cxx = set()
