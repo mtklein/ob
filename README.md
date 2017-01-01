@@ -1,7 +1,7 @@
 `ob`, opinionated build
 =======================
 
-`ob` builds C and C++ programs if they are structured in its opinionated way:
+`ob` builds C and C++ programs with Ninja if they are structured in its opinionated way:
 - each source file is tracked in Git;
 - each `#include` within the project is source-relative;
 - each `foo.c` or `foo.cc` defines `int main(...)` or has a corresponding `foo.h`;
