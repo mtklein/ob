@@ -53,7 +53,6 @@ if args.mode != 'release':
     cppflags.extend(['-Weverything', '-Wno-padded'] if is_clang else ['-Wall', '-Wextra'])
 if args.mode == 'release':
     cppflags.append('-DNDEBUG')
-
 if args.mode == 'asan':
     cppflags.append('-fsanitize=address,undefined')
     ldflags .append('-fsanitize=address,undefined')
@@ -88,17 +87,17 @@ while todo:
     src = todo.pop()
     (srcs_cc if src.endswith('.c') else srcs_cxx).add(src)
     for line in open(src):
-        line = line.strip()
-        m = include.match(line)
-        if m:
-            for dep in [os.path.join(os.path.dirname(src), d)
-                        for d in [m.group(1)+'.c', m.group(1)+'.cc']]:
-                if not os.path.exists(dep):
-                    continue
-                if dep != src:
-                    deps[src].add(dep)
-                if dep not in srcs_cc and dep not in srcs_cxx:
-                    todo.append(dep)
+        m = include.match(line.strip())
+        if not m:
+            continue
+        for dep in [os.path.join(os.path.dirname(src), d)
+                    for d in [m.group(1)+'.c', m.group(1)+'.cc']]:
+            if not os.path.exists(dep):
+                continue
+            if dep != src:
+                deps[src].add(dep)
+            if dep not in srcs_cc and dep not in srcs_cxx:
+                todo.append(dep)
 
 def ext(path, new_ext):
     return os.path.splitext(path)[0] + new_ext
