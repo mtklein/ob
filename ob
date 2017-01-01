@@ -25,6 +25,8 @@ rule link_cc
 rule link_cxx
     command     = {cxx} {ldflags} $in -o $out
     description = link $out
+rule run
+    command     = ./$in > $out
 '''
 
 parser = argparse.ArgumentParser(description='ob, opinionated builder')
@@ -120,6 +122,8 @@ with open('build.ninja', 'w') as f:
         f.write('build bin/{exe}: {link} {objs}\n'.format(exe=ext(src,''),
                                                           link=link,
                                                           objs=' '.join(sorted(objs))))
+        if '_test' in src:
+            f.write('build expected/{exe}: run bin/{exe}\n'.format(exe=ext(src,'')))
 
 rc = subprocess.call(['ninja'] + ninja_args)
 os.remove('build.ninja')

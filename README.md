@@ -3,7 +3,8 @@
 
 `ob` builds C and C++ programs if they are structured in its opinionated way:
 - each `#include` within the project is source-relative;
-- each `foo.c` or `foo.cc` defines `int main(...)` or has a corresponding `foo.h`.
+- each `foo.c` or `foo.cc` defines `int main(...)` or has a corresponding `foo.h`;
+- each `foo_test.c` or `foo_test.cc` is a unit test that is expected to return 0.
 
 To build in default mode:
 
@@ -17,7 +18,3 @@ Any other command line flags or arguments are passed to Ninja.
 
 `ob` recognizes the following environment variables:
 `CC`, `CXX`, `CPPFLAGS`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`.
-
-TODO
-----
-- auto-detect files with `_test` in their name containing `int main(...)`, build them, run them
