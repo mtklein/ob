@@ -1,0 +1,55 @@
+#!/usr/bin/env python2.7
+
+import argparse
+import os
+import subprocess
+import sys
+
+template = '''
+builddir = obj
+rule cc
+    command     = {cc} {cflags} -MD -MF $out.d -c $in -o $out
+    depfile     = $out.d
+    deps        = gcc
+    description = compile $out
+rule link
+    command     = {cc} $in -o $out
+    description = link $out
+'''
+
+parser = argparse.ArgumentParser(description='ob, opinionated builder')
+parser.add_argument('mode', nargs='?', type=str, default='default',
+                    help='(default), debug, release, asan, or tsan')
+args,ninja_args = parser.parse_known_args()
+
+cc = 'clang'
+if args.mode == 'asan':
+    cc += ' -fsanitize=address,undefined'
+if args.mode == 'tsan':
+    cc += ' -fsanitize=thread'
+if args.mode == 'release':
+    cc += ' -flto=thin'
+
+cflags = '-fcolor-diagnostics -fPIC'
+if args.mode != 'debug':
+    cflags += ' -Os'
+if args.mode != 'release':
+    cflags += ' -Werror -Weverything -Wno-padded'
+if args.mode == 'release':
+    cflags += ' -DNDEBUG'
+
+srcs  = subprocess.check_output(['git', 'ls-files', '**.c']).split()
+mains = subprocess.check_output(['git', 'grep', '-lw', 'int main', '**.c']).split()
+
+with open('build.ninja', 'w') as f:
+    f.write(template.format(cc=cc, cflags=cflags))
+    for src in srcs:
+        key, _ = os.path.splitext(src)
+        f.write('build obj/{key}.o: cc {key}.c\n'.format(key=key))
+    for src in mains:
+        key, _ = os.path.splitext(src)
+        f.write('build bin/{key}: link obj/{key}.o\n'.format(key=key))
+
+rc = subprocess.call(['ninja'] + ninja_args)
+os.remove('build.ninja')
+sys.exit(rc)
