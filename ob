@@ -105,10 +105,10 @@ while todo:
 def ext(path, new_ext):
     return os.path.splitext(path)[0] + new_ext
 
-def deps_of(src):
+def all_deps_of(src):
     srcs = {src}
     for dep in deps[src]:
-        srcs.update(deps_of(dep))
+        srcs.update(all_deps_of(dep))
     return srcs
 
 with open('build.ninja', 'w') as f:
@@ -122,7 +122,7 @@ with open('build.ninja', 'w') as f:
         f.write('build out/{obj}: {rule} {src}\n'.format(obj=ext(src,'.o'), rule=rule, src=src))
     for src in mains:
         exe = os.path.basename(ext(src, ''))
-        all_deps = deps_of(src)
+        all_deps = all_deps_of(src)
         rule = 'link_c' if all(d.endswith('.c') for d in all_deps) else 'link_cxx'
         objs = ' '.join(sorted([os.path.join('out', ext(d,'.o')) for d in all_deps]))
         f.write('build out/{exe}: {rule} {objs}\n'.format(exe=exe, rule=rule, objs=objs))
