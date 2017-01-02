@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-typedef uint32_t (adler32_fn)(uint32_t, const char*, unsigned);
+typedef uint32_t (adler32_fn)(uint32_t, const uint8_t*, unsigned);
 
 int main(void) {
     void* zlib = NULL;
@@ -15,7 +15,7 @@ int main(void) {
     CHECK(adler32);
 
     const char* msg = "Hello, world!";
-    CHECK(0x20510489 == adler32(0, msg, (unsigned)strlen(msg)));
+    CHECK(0x20510489 == adler32(0, (const uint8_t*)msg, (unsigned)strlen(msg)));
 
     return 0;
 }

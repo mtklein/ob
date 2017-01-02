@@ -8,35 +8,14 @@ import re
 import subprocess
 import sys
 
-template = '''
-builddir = out
-rule compile_c
-    command     = {cc} -x c {cppflags} {cflags} -MMD -MF $out.d -c $in -o $out
-    depfile     = $out.d
-    deps        = gcc
-    description = compile $out
-rule compile_cxx
-    command     = {cxx} -x c++ {cppflags} {cxxflags} -MMD -MF $out.d -c $in -o $out
-    depfile     = $out.d
-    deps        = gcc
-    description = compile $out
-rule link_c
-    command     = {cc} {ldflags} $in -o $out
-    description = link $out
-rule link_cxx
-    command     = {cxx} -lc++ {ldflags} $in -o $out
-    description = link $out
-rule run
-    command     = ./$in > $out
-    description = run $in
-'''
-
 parser = argparse.ArgumentParser(description='ob, opinionated builder')
 for mode in ['debug', 'release', 'ASAN', 'TSAN']:
     parser.add_argument('-'+mode.upper()[0], '--'+mode.lower(),
                         action='store_const', dest='mode', const=mode.lower(), help=mode)
-args,ninja_args = parser.parse_known_args()
+args, unknown = parser.parse_known_args()
+ninja_args = unknown
 
+# Determine baseline compile and link flags from environment and mode.
 is_osx = sys.platform == 'darwin'
 
 cc  = os.getenv('CC', 'clang' if is_osx else 'cc')
@@ -53,6 +32,9 @@ if is_clang:
     if is_osx:
         cppflags.append('-arch x86_64 -arch x86_64h')
         ldflags .append('-arch x86_64 -arch x86_64h')
+else:
+    cppflags.append('-fdiagnostics-color')
+
 if args.mode != 'debug':
     cppflags.append('-Os')
 if args.mode != 'release':
@@ -73,45 +55,83 @@ if args.mode == 'release':
     cppflags.extend(['-flto', '-fomit-frame-pointer'])
     ldflags .extend(['-flto'])
 
+# Flags set by environment variables get the last word.
 cppflags += os.getenv('CPPFLAGS', '').split()
 cflags   += os.getenv('CFLAGS'  , '').split()
 cxxflags += os.getenv('CXXFLAGS', '').split()
 ldflags  += os.getenv('LDFLAGS' , '').split()
 
+# Ask Git which source files contain main() functions.
 p = subprocess.Popen(['git', 'grep', '-lw', 'int main', '**.c*'], stdout=subprocess.PIPE)
 stdout, _ = p.communicate()
-if p.returncode not in [0,1]:
+if p.returncode not in [0,1]:  # 0 --> success, 1 --> none found.
     sys.exit(p.returncode)
 mains = [line.strip() for line in stdout.split()]
 
-srcs = set()
-todo = list(mains)
-deps = collections.defaultdict(set)
+# Determine the direct dependencies of each file containing main(), then their dependencies, etc.
+srcs       = set()
+todo       = list(mains)
+deps       = collections.defaultdict(set)
+link_flags = collections.defaultdict(set)
 
-include = re.compile('#include "(.*)\.h')
+ob_link = re.compile('#include <.*ob link (.*)')   # e.g. #include <zlib.h>  // ob link -lz
+include = re.compile('#include "(.*)\.h')          # e.g. #include "my_header.h"
 while todo:
     src = todo.pop()
     srcs.add(src)
     for line in open(src):
-        m = include.match(line.strip())
-        if not m:
-            continue
-        for dep in glob.glob(os.path.join(os.path.dirname(src), m.group(1)+'.c*')):
-            if dep != src:
-                deps[src].add(dep)
-            if dep not in srcs:
-                todo.append(dep)
+        line = line.strip()
 
-def ext(path, new_ext):
-    return os.path.splitext(path)[0] + new_ext
+        # Source files can note which external libraries they need at link time.
+        m = ob_link.match(line)
+        if m:
+            link_flags[src].add(m.group(1))
 
-def all_deps_of(src):
-    srcs = {src}
-    for dep in deps[src]:
-        srcs.update(all_deps_of(dep))
-    return srcs
+        # If you include foo.h, you depend on foo.c, foo.cc, etc. if they exist.
+        m = include.match(line)
+        if m:
+            for dep in glob.glob(os.path.join(os.path.dirname(src), m.group(1)+'.c*')):
+                if dep != src:
+                    deps[src].add(dep)
+                if dep not in srcs:
+                    todo.append(dep)
+
+# Write out a temporary build.ninja file describing our build, then build with Ninja.
+template = '''
+builddir = out
+rule compile_c
+    command     = {cc} -x c {cppflags} {cflags} -MMD -MF $out.d -c $in -o $out
+    depfile     = $out.d
+    deps        = gcc
+    description = compile $out
+rule compile_cxx
+    command     = {cxx} -x c++ {cppflags} {cxxflags} -MMD -MF $out.d -c $in -o $out
+    depfile     = $out.d
+    deps        = gcc
+    description = compile $out
+rule link_c
+    command     = {cc} {ldflags} $flags $in -o $out
+    description = link $out
+rule link_cxx
+    command     = {cxx} -lc++ {ldflags} $flags $in -o $out
+    description = link $out
+rule run
+    command     = ./$in > $out
+    description = run $in
+'''
 
 with open('build.ninja', 'w') as f:
+    def ext(path, new_ext):
+        return os.path.splitext(path)[0] + new_ext
+
+    def transitive_link_deps(src):
+        srcs, flags = {src}, link_flags[src]
+        for dep in deps[src]:
+            s, f = transitive_link_deps(dep)
+            srcs.update(s)
+            flags.update(f)
+        return srcs, flags
+
     f.write(template.format(cc=cc, cxx=cxx,
                             cppflags=' '.join(cppflags),
                             cflags  =' '.join(cflags),
@@ -122,10 +142,14 @@ with open('build.ninja', 'w') as f:
         f.write('build out/{obj}: {rule} {src}\n'.format(obj=ext(src,'.o'), rule=rule, src=src))
     for src in mains:
         exe = os.path.basename(ext(src, ''))
-        all_deps = all_deps_of(src)
-        rule = 'link_c' if all(d.endswith('.c') for d in all_deps) else 'link_cxx'
-        objs = ' '.join(sorted([os.path.join('out', ext(d,'.o')) for d in all_deps]))
-        f.write('build out/{exe}: {rule} {objs}\n'.format(exe=exe, rule=rule, objs=objs))
+        transitive_deps, flags = transitive_link_deps(src)
+        rule = 'link_c' if all(d.endswith('.c') for d in transitive_deps) else 'link_cxx'
+        objs = ' '.join(sorted([os.path.join('out', ext(d,'.o')) for d in transitive_deps]))
+        flags = ' '.join(sorted(flags))
+        f.write('build out/{exe}: {rule} {objs}\n  flags={flags}\n'.format(exe=exe,
+                                                                           rule=rule,
+                                                                           objs=objs,
+                                                                           flags=flags))
         if 'test' in src:
             f.write('build out/{exe}.log: run out/{exe}\n'.format(exe=exe))
 
