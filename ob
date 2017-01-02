@@ -46,10 +46,10 @@ if args.mode != 'release':
 if args.mode == 'release':
     cppflags.append('-DNDEBUG')
 if args.mode == 'asan':
-    cppflags.append('-fsanitize=address,undefined')
+    cppflags.extend(['-fno-sanitize-recover=all', '-fsanitize=address,undefined'])
     ldflags .append('-fsanitize=address,undefined')
 if args.mode == 'tsan':
-    cppflags.append('-fsanitize=thread')
+    cppflags.extend(['-fno-sanitize-recover=all', '-fsanitize=thread'])
     ldflags .append('-fsanitize=thread')
 if args.mode == 'release':
     cppflags.extend(['-flto', '-fomit-frame-pointer'])
