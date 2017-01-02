@@ -2,6 +2,7 @@
 
 import argparse
 import collections
+import glob
 import os
 import re
 import subprocess
@@ -77,14 +78,11 @@ cflags   += os.getenv('CFLAGS'  , '').split()
 cxxflags += os.getenv('CXXFLAGS', '').split()
 ldflags  += os.getenv('LDFLAGS' , '').split()
 
-def git_grep(*args):
-    p = subprocess.Popen(['git', 'grep'] + list(args), stdout=subprocess.PIPE)
-    stdout, _ = p.communicate()
-    if p.returncode and p.returncode != 1:
-        sys.exit(p.returncode)
-    return [line.strip() for line in stdout.split()]
-
-mains = git_grep('-lw', 'int main', '**.c') + git_grep('-lw', 'int main', '**.cc')
+p = subprocess.Popen(['git', 'grep', '-lw', 'int main', '**.c*'], stdout=subprocess.PIPE)
+stdout, _ = p.communicate()
+if p.returncode not in [0,1]:
+    sys.exit(p.returncode)
+mains = [line.strip() for line in stdout.split()]
 
 srcs = set()
 todo = list(mains)
@@ -98,10 +96,7 @@ while todo:
         m = include.match(line.strip())
         if not m:
             continue
-        for dep in [os.path.join(os.path.dirname(src), d)
-                    for d in [m.group(1)+'.c', m.group(1)+'.cc']]:
-            if not os.path.exists(dep):
-                continue
+        for dep in glob.glob(os.path.join(os.path.dirname(src), m.group(1)+'.c*')):
             if dep != src:
                 deps[src].add(dep)
             if dep not in srcs:
