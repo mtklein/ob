@@ -69,21 +69,26 @@ if p.returncode not in [0,1]:  # 0 --> success, 1 --> none found.
 mains = [line.strip() for line in stdout.split()]
 
 # Determine the direct dependencies of each file containing main(), then their dependencies, etc.
-srcs       = set()
-todo       = list(mains)
-deps       = collections.defaultdict(set)
-link_flags = collections.defaultdict(set)
+srcs          = set()
+todo          = list(mains)
+deps          = collections.defaultdict(set)
+compile_flags = collections.defaultdict(list)
+link_flags    = collections.defaultdict(set)
 
-ob_link = re.compile('#include <.*ob link (.*)')   # e.g. #include <zlib.h>  // ob link -lz
-include = re.compile('#include "(.*)\.h')          # e.g. #include "my_header.h"
+ob_compile = re.compile('ob compile (.*)')
+ob_link    = re.compile('ob link (.*)')
+include    = re.compile('#include "(.*)\.h')
 while todo:
     src = todo.pop()
     srcs.add(src)
     for line in open(src):
         line = line.strip()
 
-        # Source files can note which external libraries they need at link time.
-        m = ob_link.match(line)
+        # Source files can note extra compile and link flags they need.
+        m = ob_compile.search(line)
+        if m:
+            compile_flags[src].append(m.group(1))
+        m = ob_link.search(line)
         if m:
             link_flags[src].add(m.group(1))
 
@@ -100,12 +105,12 @@ while todo:
 template = '''
 builddir = out
 rule compile_c
-    command     = {cc} -x c {cppflags} {cflags} -MMD -MF $out.d -c $in -o $out
+    command     = {cc} -x c {cppflags} {cflags} $flags -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
 rule compile_cxx
-    command     = {cxx} -x c++ {cppflags} {cxxflags} -MMD -MF $out.d -c $in -o $out
+    command     = {cxx} -x c++ {cppflags} {cxxflags} $flags -MMD -MF $out.d -c $in -o $out
     depfile     = $out.d
     deps        = gcc
     description = compile $out
@@ -139,7 +144,11 @@ with open('build.ninja', 'w') as f:
                             ldflags =' '.join(ldflags)))
     for src in srcs:
         rule = 'compile_c' if src.endswith('.c') else 'compile_cxx'
-        f.write('build out/{obj}: {rule} {src}\n'.format(obj=ext(src,'.o'), rule=rule, src=src))
+        flags = ' '.join(compile_flags[src])
+        f.write('build out/{obj}: {rule} {src}\n  flags={flags}\n'.format(obj=ext(src,'.o'),
+                                                                          rule=rule,
+                                                                          src=src,
+                                                                          flags=flags))
     for src in mains:
         exe = os.path.basename(ext(src, ''))
         transitive_deps, flags = transitive_link_deps(src)
