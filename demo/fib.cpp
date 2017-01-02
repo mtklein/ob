@@ -1,6 +1,4 @@
-extern "C" {
-    #include "lib/fib.h"
-}
+#include "lib/fib.h"
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -1,3 +1,4 @@
 #pragma once
+#include "capi.h"
 
-int fib(int);
+CAPI int fib(int);

@@ -1,3 +1,4 @@
 #pragma once
+#include "capi.h"
 
-void print_newline(void);
+CAPI void print_newline(void);

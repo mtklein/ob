@@ -75,14 +75,18 @@ deps          = collections.defaultdict(set)
 compile_flags = collections.defaultdict(list)
 link_flags    = collections.defaultdict(set)
 
+header     = re.compile('(#|\/\/).*')
 ob_compile = re.compile('ob compile (.*)')
 ob_link    = re.compile('ob link (.*)')
 include    = re.compile('#include "(.*)\.h')
+
 while todo:
     src = todo.pop()
     srcs.add(src)
     for line in open(src):
         line = line.strip()
+        if line and not header.match(line):
+            break
 
         # Source files can note extra compile and link flags they need.
         m = ob_compile.search(line)

@@ -1,3 +1,4 @@
 #pragma once
+#include "capi.h"
 
-int diff(const void*, const void*, int);
+CAPI int diff(const void*, const void*, int);
