@@ -1,4 +1,5 @@
 #include "check.h"
+
 #include "lib/fib.h"
 
 int main(void) {
