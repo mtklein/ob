@@ -1,5 +1,5 @@
 #include "check.h"
-#include "diff.h"
+#include "lib/diff.h"
 #include <string.h>
 
 int main(void) {
