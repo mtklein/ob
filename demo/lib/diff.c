@@ -1,4 +1,4 @@
-#include "avx2_supported.h"
+#include "../cpu_supports.h"
 #include "diff.h"
 #include <immintrin.h>
 #include <string.h>
@@ -28,5 +28,5 @@ static int diff_avx2(const char* l, const char* r, int n) {
 }
 
 int diff(const void* l, const void* r, int n) {
-    return (avx2_supported() ? diff_avx2 : diff_portable)(l,r,n);
+    return (cpu_supports_avx2() ? diff_avx2 : diff_portable)(l,r,n);
 }
