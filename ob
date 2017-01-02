@@ -150,20 +150,18 @@ with open('build.ninja', 'w') as f:
     for src in srcs:
         rule = 'compile_c' if src.endswith('.c') else 'compile_cxx'
         flags = ' '.join(compile_flags[src])
-        f.write('build out/{obj}: {rule} {src}\n  flags={flags}\n'.format(obj=ext(src,'.o'),
-                                                                          rule=rule,
-                                                                          src=src,
-                                                                          flags=flags))
+        f.write('build out/{obj}: {rule} {src}\n'.format(obj=ext(src,'.o'), rule=rule, src=src))
+        if flags:
+            f.write('  flags={flags}\n'.format(flags=flags))
     for src in mains:
         exe = os.path.basename(ext(src, ''))
         transitive_deps, flags = transitive_link_deps(src)
         rule = 'link_c' if all(d.endswith('.c') for d in transitive_deps) else 'link_cxx'
         objs = ' '.join(sorted([os.path.join('out', ext(d,'.o')) for d in transitive_deps]))
         flags = ' '.join(sorted(flags))
-        f.write('build out/{exe}: {rule} {objs}\n  flags={flags}\n'.format(exe=exe,
-                                                                           rule=rule,
-                                                                           objs=objs,
-                                                                           flags=flags))
+        f.write('build out/{exe}: {rule} {objs}\n'.format(exe=exe, rule=rule, objs=objs))
+        if flags:
+            f.write('  flags={flags}\n'.format(flags=flags))
         if 'test' in src:
             f.write('build out/{exe}.log: run out/{exe}\n'.format(exe=exe))
 
