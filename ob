@@ -100,6 +100,7 @@ while todo:
         m = include.match(line)
         if m:
             for dep in glob.glob(os.path.join(os.path.dirname(src), m.group(1)+'.c*')):
+                dep = os.path.normpath(dep)
                 if dep != src:
                     deps[src].add(dep)
                 if dep not in srcs:
