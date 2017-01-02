@@ -1,3 +1,4 @@
+// This is a comment.
 #include "lib/fib.h"
 #include <stdio.h>
 #include <stdlib.h>
