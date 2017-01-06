@@ -40,7 +40,8 @@ if args.mode != 'debug':
 if args.mode != 'release':
     cppflags.extend(['-g', '-Werror'])
     if is_clang:
-        cppflags.extend(['-Weverything', '-Wno-c++98-compat', '-Wno-padded'])
+        cppflags.extend(['-Weverything',
+                         '-Wno-c++98-compat', '-Wno-c++98-compat-pedantic', '-Wno-padded'])
     else:
         cppflags.extend(['-Wall', '-Wextra'])
 if args.mode == 'release':
