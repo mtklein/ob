@@ -31,7 +31,7 @@ if is_clang:
     cppflags.append('-fcolor-diagnostics')
     if is_osx:
         cppflags.append('-arch x86_64 -arch x86_64h')
-        ldflags .append('-arch x86_64 -arch x86_64h')
+        ldflags .append('-arch x86_64 -arch x86_64h -dead_strip')
 else:
     cppflags.append('-fdiagnostics-color')
 
